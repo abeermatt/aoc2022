@@ -68,9 +68,9 @@ defmodule Part1 do
   def parse_state("C" <> " " <> "Y"), do: {:scissors, :paper}
   def parse_state("C" <> " " <> "Z"), do: {:scissors, :scissors}
 
-  defp score_for_line(""), do: 0
+  def score_for_line(""), do: 0
 
-  defp score_for_line(value) do
+  def score_for_line(value) do
     value
     |> parse_state()
     |> Scorer.score()
