@@ -44,9 +44,8 @@ defmodule Scorer do
   def round_score({:scissors, :paper}), do: @lose
   def round_score({:scissors, :rock}), do: @win
 
-  def score(value) do
-    round = value
-    hand_score(round) + round_score(round)
+  def score(state) do
+    hand_score(state) + round_score(state)
   end
 end
 ```
@@ -57,23 +56,23 @@ defmodule Part1 do
   # Y draw
   # Z win
 
-  def parse("A" <> " " <> "X"), do: {:rock, :rock}
-  def parse("A" <> " " <> "Y"), do: {:rock, :paper}
-  def parse("A" <> " " <> "Z"), do: {:rock, :scissors}
+  def parse_state("A" <> " " <> "X"), do: {:rock, :rock}
+  def parse_state("A" <> " " <> "Y"), do: {:rock, :paper}
+  def parse_state("A" <> " " <> "Z"), do: {:rock, :scissors}
 
-  def parse("B" <> " " <> "X"), do: {:paper, :rock}
-  def parse("B" <> " " <> "Y"), do: {:paper, :paper}
-  def parse("B" <> " " <> "Z"), do: {:paper, :scissors}
+  def parse_state("B" <> " " <> "X"), do: {:paper, :rock}
+  def parse_state("B" <> " " <> "Y"), do: {:paper, :paper}
+  def parse_state("B" <> " " <> "Z"), do: {:paper, :scissors}
 
-  def parse("C" <> " " <> "X"), do: {:scissors, :rock}
-  def parse("C" <> " " <> "Y"), do: {:scissors, :paper}
-  def parse("C" <> " " <> "Z"), do: {:scissors, :scissors}
+  def parse_state("C" <> " " <> "X"), do: {:scissors, :rock}
+  def parse_state("C" <> " " <> "Y"), do: {:scissors, :paper}
+  def parse_state("C" <> " " <> "Z"), do: {:scissors, :scissors}
 
   defp score_for_line(""), do: 0
 
   defp score_for_line(value) do
     value
-    |> parse()
+    |> parse_state()
     |> Scorer.score()
   end
 
@@ -95,23 +94,23 @@ Part1.play(puzzle_input)
 
 ```elixir
 defmodule Part2 do
-  def parse("A" <> " " <> "X"), do: {:rock, :scissors}
-  def parse("A" <> " " <> "Y"), do: {:rock, :rock}
-  def parse("A" <> " " <> "Z"), do: {:rock, :paper}
+  def parse_state("A" <> " " <> "X"), do: {:rock, :scissors}
+  def parse_state("A" <> " " <> "Y"), do: {:rock, :rock}
+  def parse_state("A" <> " " <> "Z"), do: {:rock, :paper}
 
-  def parse("B" <> " " <> "X"), do: {:paper, :rock}
-  def parse("B" <> " " <> "Y"), do: {:paper, :paper}
-  def parse("B" <> " " <> "Z"), do: {:paper, :scissors}
+  def parse_state("B" <> " " <> "X"), do: {:paper, :rock}
+  def parse_state("B" <> " " <> "Y"), do: {:paper, :paper}
+  def parse_state("B" <> " " <> "Z"), do: {:paper, :scissors}
 
-  def parse("C" <> " " <> "X"), do: {:scissors, :paper}
-  def parse("C" <> " " <> "Y"), do: {:scissors, :scissors}
-  def parse("C" <> " " <> "Z"), do: {:scissors, :rock}
+  def parse_state("C" <> " " <> "X"), do: {:scissors, :paper}
+  def parse_state("C" <> " " <> "Y"), do: {:scissors, :scissors}
+  def parse_state("C" <> " " <> "Z"), do: {:scissors, :rock}
 
   def score_for_line(""), do: 0
 
   def score_for_line(value) do
     value
-    |> parse()
+    |> parse_state()
     |> Scorer.score()
   end
 
