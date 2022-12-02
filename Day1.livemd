@@ -1,0 +1,60 @@
+# Day 1
+
+```elixir
+Mix.install([
+  {:kino_aoc, git: "https://github.com/ljgago/kino_aoc"}
+])
+```
+
+## Day 1
+
+<!-- livebook:{"attrs":{"day":"1","session":"53616c7465645f5f1b91c2b7bf1305222e6a93cdbf45e5c6dbc6699564506ee8c751084daaf8d05d924484dc629dc28139392d83c6465e11e6ce27f89fa58a81","variable":"puzzle_input","year":"2022"},"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, puzzle_input} =
+  KinoAOC.download_puzzle(
+    "2022",
+    "1",
+    "53616c7465645f5f1b91c2b7bf1305222e6a93cdbf45e5c6dbc6699564506ee8c751084daaf8d05d924484dc629dc28139392d83c6465e11e6ce27f89fa58a81"
+  )
+```
+
+```elixir
+defmodule Counter do
+  def count("", {current_max, pending}) do
+    {max(current_max, pending), 0}
+  end
+
+  def count(value, {current_max, pending}) do
+    {current_max, pending + String.to_integer(value)}
+  end
+end
+
+day1_input
+|> String.split("\n")
+|> Enum.reduce({0, 0}, &Counter.count/2)
+|> elem(0)
+```
+
+```elixir
+defmodule Counter do
+  def count("", {maxes, pending}) do
+    top =
+      (maxes ++ [pending])
+      |> Enum.sort(:desc)
+      |> Enum.take(3)
+
+    {top, 0}
+  end
+
+  def count(value, {maxes, pending}) do
+    {maxes, pending + String.to_integer(value)}
+  end
+end
+
+day1_input
+|> String.split("\n")
+|> Enum.reduce({[], 0}, &Counter.count/2)
+|> elem(0)
+|> Enum.sum()
+```

@@ -1,0 +1,128 @@
+# Day 2
+
+```elixir
+Mix.install([
+  {:kino_aoc, git: "https://github.com/ljgago/kino_aoc"}
+])
+```
+
+## Part 1
+
+<!-- livebook:{"attrs":{"day":"2","session":"53616c7465645f5f1b91c2b7bf1305222e6a93cdbf45e5c6dbc6699564506ee8c751084daaf8d05d924484dc629dc28139392d83c6465e11e6ce27f89fa58a81","variable":"puzzle_input","year":"2022"},"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, puzzle_input} =
+  KinoAOC.download_puzzle(
+    "2022",
+    "2",
+    "53616c7465645f5f1b91c2b7bf1305222e6a93cdbf45e5c6dbc6699564506ee8c751084daaf8d05d924484dc629dc28139392d83c6465e11e6ce27f89fa58a81"
+  )
+```
+
+```elixir
+defmodule Scorer do
+  # Rock 1
+  # Paper 2
+  # Scissors 3
+
+  @lose 0
+  @draw 3
+  @win 6
+
+  def hand_score({_, :rock}), do: 1
+  def hand_score({_, :paper}), do: 2
+  def hand_score({_, :scissors}), do: 3
+
+  def round_score({x, x}), do: @draw
+
+  def round_score({:rock, :paper}), do: @win
+  def round_score({:rock, :scissors}), do: @lose
+
+  def round_score({:paper, :rock}), do: @lose
+  def round_score({:paper, :scissors}), do: @win
+
+  def round_score({:scissors, :paper}), do: @lose
+  def round_score({:scissors, :rock}), do: @win
+
+  def score(value) do
+    round = value
+    hand_score(round) + round_score(round)
+  end
+end
+```
+
+```elixir
+defmodule Part1 do
+  # X lose
+  # Y draw
+  # Z win
+
+  def parse("A" <> " " <> "X"), do: {:rock, :rock}
+  def parse("A" <> " " <> "Y"), do: {:rock, :paper}
+  def parse("A" <> " " <> "Z"), do: {:rock, :scissors}
+
+  def parse("B" <> " " <> "X"), do: {:paper, :rock}
+  def parse("B" <> " " <> "Y"), do: {:paper, :paper}
+  def parse("B" <> " " <> "Z"), do: {:paper, :scissors}
+
+  def parse("C" <> " " <> "X"), do: {:scissors, :rock}
+  def parse("C" <> " " <> "Y"), do: {:scissors, :paper}
+  def parse("C" <> " " <> "Z"), do: {:scissors, :scissors}
+
+  defp score_for_line(""), do: 0
+
+  defp score_for_line(value) do
+    value
+    |> parse()
+    |> Scorer.score()
+  end
+
+  def play(input) do
+    input
+    |> String.split("\n")
+    |> Enum.reduce(0, fn line, acc ->
+      acc + score_for_line(line)
+    end)
+  end
+end
+
+# 12586
+
+Part1.play(puzzle_input)
+```
+
+## Part 2
+
+```elixir
+defmodule Part2 do
+  def parse("A" <> " " <> "X"), do: {:rock, :scissors}
+  def parse("A" <> " " <> "Y"), do: {:rock, :rock}
+  def parse("A" <> " " <> "Z"), do: {:rock, :paper}
+
+  def parse("B" <> " " <> "X"), do: {:paper, :rock}
+  def parse("B" <> " " <> "Y"), do: {:paper, :paper}
+  def parse("B" <> " " <> "Z"), do: {:paper, :scissors}
+
+  def parse("C" <> " " <> "X"), do: {:scissors, :paper}
+  def parse("C" <> " " <> "Y"), do: {:scissors, :scissors}
+  def parse("C" <> " " <> "Z"), do: {:scissors, :rock}
+
+  def score_for_line(""), do: 0
+
+  def score_for_line(value) do
+    value
+    |> parse()
+    |> Scorer.score()
+  end
+
+  def play(input) do
+    input
+    |> String.split("\n")
+    |> Enum.reduce(0, fn line, acc ->
+      acc + score_for_line(line)
+    end)
+  end
+end
+
+Part2.play(puzzle_input)
+```
