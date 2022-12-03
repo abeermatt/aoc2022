@@ -15,7 +15,7 @@ Mix.install([
   KinoAOC.download_puzzle(
     "2022",
     "3",
-    "53616c7465645f5fc9ceb31a445cda3e7913612434c8894d7f4fc75eb637cbaf48a9ff8fa320c7f3a8fe1c505903fb377d150bc1a253d002adb9b44592b3f55b"
+    ""
   )
 ```
 
