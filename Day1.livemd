@@ -8,15 +8,10 @@ Mix.install([
 
 ## Data
 
-<!-- livebook:{"attrs":{"day":"1","session":"53616c7465645f5f1b91c2b7bf1305222e6a93cdbf45e5c6dbc6699564506ee8c751084daaf8d05d924484dc629dc28139392d83c6465e11e6ce27f89fa58a81","variable":"puzzle_input","year":"2022"},"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+<!-- livebook:{"attrs":{"day":"1","session_secret":"","variable":"puzzle_input","year":"2022"},"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
 
 ```elixir
-{:ok, puzzle_input} =
-  KinoAOC.download_puzzle(
-    "2022",
-    "1",
-    "53616c7465645f5f1b91c2b7bf1305222e6a93cdbf45e5c6dbc6699564506ee8c751084daaf8d05d924484dc629dc28139392d83c6465e11e6ce27f89fa58a81"
-  )
+{:ok, puzzle_input} = KinoAOC.download_puzzle("2022", "1", "")
 ```
 
 ## Part 1
