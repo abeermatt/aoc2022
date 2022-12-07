@@ -112,26 +112,13 @@ To begin, find all of the directories with a total size of at most 100000, then 
 Find all of the directories with a total size of at most 100000. What is the sum of the total sizes of those directories?
 
 ```elixir
-defmodule File do
-  defstruct [:name, :size]
-
-  def new(line) do
-    [size, name] = String.split(line, " ")
-
-    %__MODULE__{
-      name: name,
-      size: String.to_integer(size)
-    }
-  end
-end
-
 defmodule FileSystem do
   defstruct [:cwd, :directories]
 
   def new() do
     %__MODULE__{
       cwd: "/",
-      directories: %{} |> Map.put("/", [])
+      directories: %{} |> Map.put("/", 0)
     }
   end
 
@@ -153,46 +140,32 @@ defmodule FileSystem do
 
   def push_directory(%__MODULE__{} = filesystem, name) do
     key = directory_key(filesystem, name)
+    directories = Map.put_new(filesystem.directories, key, 0)
 
     filesystem
-    |> add_directory(name)
+    |> set_directories(directories)
     |> set_cwd(key)
   end
 
-  def add_files(%__MODULE__{} = filesystem, files) do
-    directories = Map.put(filesystem.directories, filesystem.cwd, files)
-    %{filesystem | directories: directories}
-  end
-
-  def add_directories(%__MODULE__{} = filesystem, names) do
-    Enum.reduce(names, filesystem, fn name, acc ->
-      add_directory(acc, name)
-    end)
+  def set_cwd_size(%__MODULE__{directories: directories, cwd: cwd} = filesystem, size) do
+    updated = Map.put(directories, cwd, size)
+    %{filesystem | directories: updated}
   end
 
   defp set_cwd(%__MODULE__{} = filesystem, cwd) do
     %{filesystem | cwd: cwd}
   end
 
-  defp add_directory(%__MODULE__{} = filesystem, name) do
-    key = directory_key(filesystem, name)
-    directories = Map.put(filesystem.directories, key, [])
+  defp set_directories(%__MODULE__{} = filesystem, directories) do
     %{filesystem | directories: directories}
   end
 
   def sizes(%__MODULE__{directories: directories}) do
-    sizes =
-      directories
-      |> Enum.map(fn {key, files} ->
-        {key, Enum.sum(Enum.map(files, & &1.size))}
-      end)
-      |> Enum.into(%{})
-
     directories
     |> Map.keys()
     |> Enum.map(fn directory ->
       total =
-        sizes
+        directories
         |> Map.filter(fn {key, _} -> String.starts_with?(key, directory) end)
         |> Map.values()
         |> Enum.sum()
@@ -231,13 +204,18 @@ defmodule Day7 do
 
   def process_line(%FileSystem{} = filesystem, ["$ ls" | rest]) do
     {lines, remaining} = Enum.split_while(rest, fn line -> !is_command?(line) end)
-    grouped = Enum.group_by(lines, &is_directory_entry?/1)
-    files = Map.get(grouped, false, [])
-    directories = Map.get(grouped, true, [])
+
+    file_size =
+      lines
+      |> Enum.filter(&is_file_entry?/1)
+      |> Enum.map(fn line ->
+        [size, _] = String.split(line, " ")
+        String.to_integer(size)
+      end)
+      |> Enum.sum()
 
     filesystem
-    |> FileSystem.add_files(Enum.map(files, &File.new/1))
-    |> FileSystem.add_directories(Enum.map(directories, &directory_name/1))
+    |> FileSystem.set_cwd_size(file_size)
     |> process_line(remaining)
   end
 
@@ -246,8 +224,8 @@ defmodule Day7 do
   defp is_command?("$" <> _), do: true
   defp is_command?(_), do: false
 
-  defp is_directory_entry?("dir " <> _), do: true
-  defp is_directory_entry?(_), do: false
+  defp is_file_entry?("dir " <> _), do: false
+  defp is_file_entry?(_), do: true
 end
 ```
 
