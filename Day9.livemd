@@ -285,16 +285,6 @@ So, there are 13 positions the tail visited at least once.
 Simulate your complete hypothetical series of motions. How many positions does the tail of the rope visit at least once?
 
 ```elixir
-defmodule Day9Part1 do
-  def run(lines) do
-    lines
-    |> Enum.reduce(Grid.new(), fn line, grid ->
-      Grid.move(grid, line)
-    end)
-    |> Grid.visit_count()
-  end
-end
-
 defmodule Position do
   defstruct [:x, :y]
 
@@ -305,31 +295,39 @@ defmodule Position do
     }
   end
 
-  def is_touching(%Position{x: x, y: y}, %Position{x: x, y: y}), do: true
-  def is_touching(%Position{x: x, y: y1}, %Position{x: x, y: y2}) when abs(y1 - y2) == 1, do: true
-  def is_touching(%Position{x: x1, y: y}, %Position{x: x2, y: y}) when abs(x1 - x2) == 1, do: true
+  def adjustment(%Position{x: 0, y: 0}), do: Position.new(0, 0)
 
-  def is_touching(%Position{x: x1, y: y1}, %Position{x: x2, y: y2})
-      when abs(x1 - x2) == 1 and abs(y1 - y2) == 1,
-      do: true
+  def adjustment(%Position{x: 1, y: 0}), do: Position.new(0, 0)
+  def adjustment(%Position{x: x, y: 0}) when x > 1, do: Position.new(1, 0)
+  def adjustment(%Position{x: x, y: 0}) when x < -1, do: Position.new(-1, 0)
+  def adjustment(%Position{x: x, y: 0}) when abs(x) == 1, do: Position.new(0, 0)
 
-  def is_touching(%Position{}, %Position{}), do: false
+  def adjustment(%Position{x: 0, y: 1}), do: Position.new(0, 0)
+  def adjustment(%Position{x: 0, y: y}) when y > 1, do: Position.new(0, 1)
+  def adjustment(%Position{x: 0, y: y}) when y < -1, do: Position.new(0, -1)
+  def adjustment(%Position{x: 0, y: y}) when abs(y) == 1, do: Position.new(0, 0)
 
-  def move_up(%Position{x: x, y: y}) do
-    Position.new(x, y - 1)
+  def adjustment(%Position{x: x, y: y}) when abs(x) == 1 and abs(y) == 1, do: Position.new(0, 0)
+
+  def adjustment(%Position{x: x, y: y}) when x >= 1 and y >= 1, do: Position.new(1, 1)
+  def adjustment(%Position{x: x, y: y}) when x >= 1 and y <= -1, do: Position.new(1, -1)
+  def adjustment(%Position{x: x, y: y}) when x <= -1 and y >= 1, do: Position.new(-1, 1)
+  def adjustment(%Position{x: x, y: y}) when x <= -1 and y <= -1, do: Position.new(-1, -1)
+
+  def next(%Position{x: x1, y: y1} = position1, %Position{x: x2, y: y2}) do
+    Position.new(x2 - x1, y2 - y1)
+    |> adjustment()
+    |> apply_to(position1)
   end
 
-  def move_down(%Position{x: x, y: y}) do
-    Position.new(x, y + 1)
+  def apply_to(%Position{x: x1, y: y1}, %Position{x: x2, y: y2}) do
+    Position.new(x1 + x2, y1 + y2)
   end
 
-  def move_left(%Position{x: x, y: y}) do
-    Position.new(x - 1, y)
-  end
-
-  def move_right(%Position{x: x, y: y}) do
-    Position.new(x + 1, y)
-  end
+  def move_up(%Position{x: x, y: y}), do: Position.new(x, y + 1)
+  def move_down(%Position{x: x, y: y}), do: Position.new(x, y - 1)
+  def move_left(%Position{x: x, y: y}), do: Position.new(x - 1, y)
+  def move_right(%Position{x: x, y: y}), do: Position.new(x + 1, y)
 
   def apply(%Position{} = position, "R"), do: move_right(position)
   def apply(%Position{} = position, "L"), do: move_left(position)
@@ -338,48 +336,60 @@ defmodule Position do
 end
 
 defmodule Grid do
-  defstruct [:head, :tail, :visited]
+  defstruct [:rope, :visited]
 
   @start Position.new(0, 0)
 
-  def new() do
+  def new(size) do
     %__MODULE__{
-      head: @start,
-      tail: @start,
+      rope: Enum.into(0..(size - 1), [], fn _ -> @start end),
       visited: MapSet.new([@start])
     }
   end
 
   def visit_count(%Grid{visited: visited}), do: MapSet.size(visited)
 
-  def with_head(%Grid{} = grid, head), do: %{grid | head: head}
-
-  def with_tail(%Grid{visited: visited} = grid, tail) do
-    %{grid | tail: tail, visited: MapSet.put(visited, tail)}
+  def with_rope(%Grid{visited: visited} = grid, rope) do
+    %{grid | rope: rope, visited: MapSet.put(visited, List.last(rope))}
   end
 
   def move(%Grid{} = grid, <<direction::binary-size(1)>> <> " " <> steps) do
     do_move(grid, direction, String.to_integer(steps))
-    |> IO.inspect(label: "Applied #{direction} #{steps}")
   end
 
   def do_move(%Grid{} = grid, _, 0), do: grid
 
-  def do_move(%Grid{head: old_head, tail: old_tail} = grid, direction, steps) do
+  def do_move(%Grid{rope: [old_head | tail]} = grid, direction, steps) do
     new_head = Position.apply(old_head, direction)
 
-    case Position.is_touching(new_head, old_tail) do
-      true -> grid |> with_head(new_head)
-      false -> grid |> with_head(new_head) |> with_tail(old_head)
-    end
+    grid
+    |> with_rope(move_tail([new_head | tail]))
     |> do_move(direction, steps - 1)
+  end
+
+  def move_tail([_ | []] = rope), do: rope
+
+  def move_tail([head | [next | tail]]) do
+    move = Position.next(next, head)
+
+    [head | move_tail([move | tail])]
+  end
+end
+```
+
+```elixir
+defmodule Day9Part1 do
+  def run(lines) do
+    lines
+    |> Enum.reduce(Grid.new(2), fn line, grid ->
+      Grid.move(grid, line)
+    end)
+    |> Grid.visit_count()
   end
 end
 ```
 
 ## Part 1 - tests
-
-<!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
 ExUnit.start(autorun: false)
@@ -401,15 +411,63 @@ defmodule Day9Part1Test do
 
     assert 13 = Day9Part1.run(Sanitizer.sanitize(input))
   end
+
+  test "applies next function correctly" do
+    assert Position.new(1, 1) == Position.new(0, 0) |> Position.next(Position.new(1, 2))
+    assert Position.new(1, 0) == Position.new(0, 0) |> Position.next(Position.new(4, 0))
+    assert Position.new(0, 1) == Position.new(0, 0) |> Position.next(Position.new(0, 4))
+    assert Position.new(3, 0) == Position.new(4, 0) |> Position.next(Position.new(0, 0))
+    assert Position.new(0, 3) == Position.new(0, 4) |> Position.next(Position.new(0, 0))
+    assert Position.new(3, 3) == Position.new(4, 4) |> Position.next(Position.new(0, 0))
+    assert Position.new(3, 2) == Position.new(4, 3) |> Position.next(Position.new(0, 0))
+    assert Position.new(0, 0) == Position.new(0, 0) |> Position.next(Position.new(1, 0))
+    assert Position.new(4, 4) == Position.new(4, 4) |> Position.next(Position.new(3, 3))
+    assert Position.new(3, 4) == Position.new(4, 4) |> Position.next(Position.new(0, 4))
+    assert Position.new(4, 4) == Position.new(4, 4) |> Position.next(Position.new(3, 4))
+  end
+
+  test "applies correct positions step by step" do
+    Grid.new(2)
+    |> Grid.move("R 4")
+    |> assert_rope(0, 4, 0)
+    |> assert_rope(1, 3, 0)
+    |> Grid.move("U 4")
+    |> assert_rope(0, 4, 4)
+    |> assert_rope(1, 4, 3)
+    |> Grid.move("L 3")
+    |> assert_rope(0, 1, 4)
+    |> assert_rope(1, 2, 4)
+    |> Grid.move("D 1")
+    |> assert_rope(0, 1, 3)
+    |> assert_rope(1, 2, 4)
+    |> Grid.move("R 4")
+    |> assert_rope(0, 5, 3)
+    |> assert_rope(1, 4, 3)
+    |> Grid.move("D 1")
+    |> assert_rope(0, 5, 2)
+    |> assert_rope(1, 4, 3)
+    |> Grid.move("L 5")
+    |> assert_rope(0, 0, 2)
+    |> assert_rope(1, 1, 2)
+    |> Grid.move("R 2")
+    |> assert_rope(0, 2, 2)
+    |> assert_rope(1, 1, 2)
+  end
+
+  defp assert_rope(%Grid{rope: rope} = grid, position, x, y) do
+    assert %Position{x: ^x, y: ^y} = Enum.at(rope, position)
+    grid
+  end
 end
 
 ExUnit.run()
 ```
 
 ```elixir
-raw_input
-|> Sanitizer.sanitize()
-|> Day9Part1.run()
+5907 =
+  raw_input
+  |> Sanitizer.sanitize()
+  |> Day9Part1.run()
 ```
 
 ## Part 2
@@ -859,7 +917,7 @@ Simulate your complete series of motions on a larger rope with ten knots. How ma
 defmodule Day9Part2 do
   def run(lines) do
     lines
-    |> Enum.reduce(Grid.new(), fn line, grid ->
+    |> Enum.reduce(Grid.new(10), fn line, grid ->
       Grid.move(grid, line)
     end)
     |> Grid.visit_count()
@@ -869,11 +927,64 @@ end
 
 ## Part 2 - tests
 
+<!-- livebook:{"reevaluate_automatically":true} -->
+
 ```elixir
 ExUnit.start(autorun: false)
 
 defmodule Day9Part2Test do
   use ExUnit.Case, async: true
+
+  test "works with sample input 1" do
+    input = """
+    R 4
+    U 4
+    L 3
+    D 1
+    R 4
+    D 1
+    L 5
+    R 2
+    """
+
+    assert 1 = Day9Part2.run(Sanitizer.sanitize(input))
+  end
+
+  test "applies correct positions step by step" do
+    Grid.new(10)
+    # 4321H
+    |> Grid.move("R 4")
+    |> assert_rope(0, 4, 0)
+    |> assert_rope(1, 3, 0)
+    |> assert_rope(2, 2, 0)
+    |> assert_rope(3, 1, 0)
+    |> assert_rope(4, 0, 0)
+    |> assert_rope(5, 0, 0)
+    |> assert_rope(6, 0, 0)
+    |> assert_rope(7, 0, 0)
+    |> assert_rope(8, 0, 0)
+    |> Grid.move("U 4")
+    |> assert_rope(0, 4, 4)
+    |> assert_rope(1, 4, 3)
+    |> Grid.move("L 3")
+    |> assert_rope(0, 1, 4)
+    |> assert_rope(1, 2, 4)
+    |> Grid.move("D 1")
+    |> assert_rope(0, 1, 3)
+    |> assert_rope(1, 2, 4)
+    |> Grid.move("R 4")
+    |> assert_rope(0, 5, 3)
+    |> assert_rope(1, 4, 3)
+    |> Grid.move("D 1")
+    |> assert_rope(0, 5, 2)
+    |> assert_rope(1, 4, 3)
+    |> Grid.move("L 5")
+    |> assert_rope(0, 0, 2)
+    |> assert_rope(1, 1, 2)
+    |> Grid.move("R 2")
+    |> assert_rope(0, 2, 2)
+    |> assert_rope(1, 1, 2)
+  end
 
   test "works with sample input" do
     input = """
@@ -889,7 +1000,19 @@ defmodule Day9Part2Test do
 
     assert 36 = Day9Part2.run(Sanitizer.sanitize(input))
   end
+
+  defp assert_rope(%Grid{rope: rope} = grid, position, x, y) do
+    assert %Position{x: ^x, y: ^y} = Enum.at(rope, position)
+    grid
+  end
 end
 
 ExUnit.run()
+```
+
+```elixir
+2303 =
+  raw_input
+  |> Sanitizer.sanitize()
+  |> Day9Part2.run()
 ```
